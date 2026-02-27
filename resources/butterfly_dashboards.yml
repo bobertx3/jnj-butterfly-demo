@@ -1,0 +1,15 @@
+resources:
+  dashboards:
+    customer360_dashboard:
+      display_name: "Butterfly Customer 360"
+      file_path: ../dashboards/customer360_dashboard.json
+      warehouse_id: ${var.warehouse_id}
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.schema}
+
+    data_quality_dashboard:
+      display_name: "Butterfly Data Quality"
+      file_path: ../dashboards/data_quality_dashboard.json
+      warehouse_id: ${var.warehouse_id}
+      dataset_catalog: ${var.catalog}
+      dataset_schema: ${var.schema}

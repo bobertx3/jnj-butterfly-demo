@@ -1,0 +1,42 @@
+bundle:
+  name: butterfly-medallion-dq
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    default: bx4
+  schema:
+    default: butterfly
+  raw_volume:
+    default: raw_landing
+  dashboard_parent_path:
+    default: /Workspace/Users/${workspace.current_user.userName}/butterfly_dashboards
+  warehouse_id:
+    description: SQL warehouse used for dashboard datasets.
+    lookup:
+      warehouse: "Serverless Starter Warehouse"
+
+targets:
+  dev:
+    mode: development
+    default: false
+    workspace:
+      profile: DEFAULT
+      root_path: /Workspace/Users/${workspace.current_user.userName}/jnj-butterfly-demo
+    variables:
+      catalog: bx4
+      schema: butterfly
+      raw_volume: raw_landing
+
+  prod:
+    mode: production
+    default: true
+    workspace:
+      profile: DEFAULT
+      root_path: /Workspace/Users/${workspace.current_user.userName}/jnj-butterfly-demo
+    variables:
+      catalog: bx4
+      schema: butterfly
+      raw_volume: raw_landing

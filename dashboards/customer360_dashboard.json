@@ -1,0 +1,899 @@
+{
+  "datasets": [
+    {
+      "name": "customer360_base",
+      "displayName": "Customer 360 Base",
+      "queryLines": [
+        "SELECT ",
+        "  account_id, account_name, region, segment, tier, ",
+        "  primary_product_company, primary_product_brand, ",
+        "  contact_count, lifetime_orders, lifetime_net_sales, open_pipeline_amount, avg_resolution_hours_180d ",
+        "FROM bx4.butterfly.gold_customer_360"
+      ]
+    },
+    {
+      "name": "product_perf",
+      "displayName": "Product Company Brand Performance",
+      "queryLines": [
+        "SELECT ",
+        "  product_company, product_brand, customer_count, order_lines, net_sales, gross_profit ",
+        "FROM bx4.butterfly.gold_product_company_brand_performance"
+      ]
+    },
+    {
+      "name": "activity_trend",
+      "displayName": "Activity Trend 30d",
+      "queryLines": [
+        "SELECT activity_date, activity_type, activity_count, successful_count ",
+        "FROM bx4.butterfly.gold_activity_trend_30d"
+      ]
+    },
+    {
+      "name": "sales_monthly",
+      "displayName": "Monthly Sales",
+      "queryLines": [
+        "SELECT DATE_TRUNC('MONTH', invoice_date) AS sales_month, SUM(net_sales) AS monthly_net_sales, SUM(gross_profit) AS monthly_gross_profit ",
+        "FROM bx4.butterfly.silver_transactions ",
+        "GROUP BY DATE_TRUNC('MONTH', invoice_date)"
+      ]
+    },
+    {
+      "name": "pipeline_stage",
+      "displayName": "Pipeline Stage Mix",
+      "queryLines": [
+        "SELECT stage_name, SUM(amount) AS pipeline_amount, COUNT(*) AS opportunities ",
+        "FROM bx4.butterfly.silver_opportunities ",
+        "GROUP BY stage_name"
+      ]
+    },
+    {
+      "name": "sales_region_company",
+      "displayName": "Sales by Region and Company",
+      "queryLines": [
+        "SELECT c.region, p.product_company, SUM(t.net_sales) AS net_sales ",
+        "FROM bx4.butterfly.silver_transactions t ",
+        "INNER JOIN bx4.butterfly.silver_account c ON c.account_id = t.account_id ",
+        "INNER JOIN bx4.butterfly.silver_product p ON p.product_id = t.product_id ",
+        "GROUP BY c.region, p.product_company"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "overview",
+      "displayName": "Customer 360 Overview",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "title_widget",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Butterfly Customer 360 (J&J Portfolio)"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "subtitle_widget",
+            "multilineTextboxSpec": {
+              "lines": [
+                "Filter and drill down by product company and brand."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_customer_count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customer360_base",
+                  "fields": [
+                    {
+                      "name": "count(account_id)",
+                      "expression": "COUNT(`account_id`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count(account_id)",
+                  "displayName": "Customers"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Customer Count"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_net_sales",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customer360_base",
+                  "fields": [
+                    {
+                      "name": "sum(lifetime_net_sales)",
+                      "expression": "SUM(`lifetime_net_sales`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(lifetime_net_sales)",
+                  "displayName": "Net Sales"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Total Net Sales"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_open_pipeline",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customer360_base",
+                  "fields": [
+                    {
+                      "name": "sum(open_pipeline_amount)",
+                      "expression": "SUM(`open_pipeline_amount`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(open_pipeline_amount)",
+                  "displayName": "Open Pipeline"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Open Pipeline"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "company_sales_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "product_perf",
+                  "fields": [
+                    {
+                      "name": "product_company",
+                      "expression": "`product_company`"
+                    },
+                    {
+                      "name": "sum(net_sales)",
+                      "expression": "SUM(`net_sales`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "product_company",
+                  "displayName": "Product Company",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(net_sales)",
+                  "displayName": "Net Sales",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Net Sales by Product Company"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "brand_sales_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "product_perf",
+                  "fields": [
+                    {
+                      "name": "product_brand",
+                      "expression": "`product_brand`"
+                    },
+                    {
+                      "name": "sum(net_sales)",
+                      "expression": "SUM(`net_sales`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "product_brand",
+                  "displayName": "Product Brand",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(net_sales)",
+                  "displayName": "Net Sales",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "product_company",
+                  "displayName": "Company",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Brand Drilldown (Colored by Company)"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 5,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "customer_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customer360_base",
+                  "fields": [
+                    {
+                      "name": "account_id",
+                      "expression": "`account_id`"
+                    },
+                    {
+                      "name": "account_name",
+                      "expression": "`account_name`"
+                    },
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "primary_product_company",
+                      "expression": "`primary_product_company`"
+                    },
+                    {
+                      "name": "primary_product_brand",
+                      "expression": "`primary_product_brand`"
+                    },
+                    {
+                      "name": "lifetime_net_sales",
+                      "expression": "`lifetime_net_sales`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "account_id",
+                    "displayName": "Account ID"
+                  },
+                  {
+                    "fieldName": "account_name",
+                    "displayName": "Account Name"
+                  },
+                  {
+                    "fieldName": "region",
+                    "displayName": "Region"
+                  },
+                  {
+                    "fieldName": "primary_product_company",
+                    "displayName": "Primary Company"
+                  },
+                  {
+                    "fieldName": "primary_product_brand",
+                    "displayName": "Primary Brand"
+                  },
+                  {
+                    "fieldName": "lifetime_net_sales",
+                    "displayName": "Net Sales"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Customer Drilldown Table"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ]
+    },
+    {
+      "name": "sales_performance",
+      "displayName": "Sales Performance",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "sales_title_widget",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Sales Performance"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "sales_subtitle_widget",
+            "multilineTextboxSpec": {
+              "lines": [
+                "Revenue, gross profit, pipeline, and regional company mix."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "sales_kpi_total_net_sales",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customer360_base",
+                  "fields": [
+                    {
+                      "name": "sum(lifetime_net_sales)",
+                      "expression": "SUM(`lifetime_net_sales`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(lifetime_net_sales)",
+                  "displayName": "Total Net Sales"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Total Net Sales"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "sales_kpi_total_pipeline",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customer360_base",
+                  "fields": [
+                    {
+                      "name": "sum(open_pipeline_amount)",
+                      "expression": "SUM(`open_pipeline_amount`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(open_pipeline_amount)",
+                  "displayName": "Open Pipeline"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Open Pipeline"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "sales_kpi_customer_count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customer360_base",
+                  "fields": [
+                    {
+                      "name": "count(account_id)",
+                      "expression": "COUNT(`account_id`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "count(account_id)",
+                  "displayName": "Customers"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Customers"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "sales_monthly_line",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "sales_monthly",
+                  "fields": [
+                    {
+                      "name": "sales_month",
+                      "expression": "`sales_month`"
+                    },
+                    {
+                      "name": "monthly_net_sales",
+                      "expression": "`monthly_net_sales`"
+                    },
+                    {
+                      "name": "monthly_gross_profit",
+                      "expression": "`monthly_gross_profit`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "sales_month",
+                  "displayName": "Month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "fields": [
+                    {
+                      "fieldName": "monthly_net_sales",
+                      "displayName": "Net Sales"
+                    },
+                    {
+                      "fieldName": "monthly_gross_profit",
+                      "displayName": "Gross Profit"
+                    }
+                  ]
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Monthly Net Sales and Gross Profit"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "pipeline_stage_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "pipeline_stage",
+                  "fields": [
+                    {
+                      "name": "stage_name",
+                      "expression": "`stage_name`"
+                    },
+                    {
+                      "name": "pipeline_amount",
+                      "expression": "`pipeline_amount`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "stage_name",
+                  "displayName": "Stage",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "pipeline_amount",
+                  "displayName": "Pipeline Amount",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Pipeline by Stage"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 5,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "sales_region_company_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "sales_region_company",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "net_sales",
+                      "expression": "`net_sales`"
+                    },
+                    {
+                      "name": "product_company",
+                      "expression": "`product_company`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "region",
+                  "displayName": "Region",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "net_sales",
+                  "displayName": "Net Sales",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "product_company",
+                  "displayName": "Product Company",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Sales by Region and Product Company"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 6,
+            "height": 5
+          }
+        }
+      ]
+    },
+    {
+      "name": "global_filters",
+      "displayName": "Filters",
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layout": [
+        {
+          "widget": {
+            "name": "filter_region",
+            "queries": [
+              {
+                "name": "customer360_region_query",
+                "query": {
+                  "datasetName": "customer360_base",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "region",
+                    "displayName": "Region",
+                    "queryName": "customer360_region_query"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Region"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "filter_product_company",
+            "queries": [
+              {
+                "name": "product_company_query",
+                "query": {
+                  "datasetName": "product_perf",
+                  "fields": [
+                    {
+                      "name": "product_company",
+                      "expression": "`product_company`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "product_company",
+                    "displayName": "Product Company",
+                    "queryName": "product_company_query"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Product Company"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "filter_product_brand",
+            "queries": [
+              {
+                "name": "product_brand_query",
+                "query": {
+                  "datasetName": "product_perf",
+                  "fields": [
+                    {
+                      "name": "product_brand",
+                      "expression": "`product_brand`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "product_brand",
+                    "displayName": "Product Brand",
+                    "queryName": "product_brand_query"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Product Brand"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        }
+      ]
+    }
+  ]
+}

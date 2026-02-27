@@ -1,0 +1,22 @@
+# Next Best Action — Databricks App (Lakebase Autoscale backend)
+# In Apps UI: add Secret references for PGUSER and PGPASSWORD (e.g. scope lakebase-creds, keys PGUSER / PGPASSWORD).
+
+command:
+  - "python"
+  - "-m"
+  - "uvicorn"
+  - "app:app"
+  - "--host"
+  - "0.0.0.0"
+  - "--port"
+  - "8000"
+
+env:
+  - name: PGHOST
+    value: "ep-wandering-scene-d2440hao.database.us-east-1.cloud.databricks.com"
+  - name: PGPORT
+    value: "5432"
+  - name: PGDATABASE
+    value: "batch_release_db"
+  # PGUSER and PGPASSWORD: set via App Edit > Environment > Add from secret scope
+  # e.g. lakebase-native-user (key PGUSER), lakebase-native-password (key PGPASSWORD)

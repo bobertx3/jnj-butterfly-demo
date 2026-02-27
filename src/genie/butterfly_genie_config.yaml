@@ -1,0 +1,37 @@
+# Genie space source config for Butterfly (bx4.butterfly) schema.
+# Use this with create_genie_space.py or the create_or_update_genie MCP tool.
+
+display_name: "Butterfly Analytics"
+catalog: bx4
+schema: butterfly
+
+# Key tables for natural language exploration (silver + gold).
+table_identifiers:
+  - bx4.butterfly.silver_account
+  - bx4.butterfly.silver_contact
+  - bx4.butterfly.silver_transactions
+  - bx4.butterfly.silver_opportunities
+  - bx4.butterfly.gold_customer_360
+  - bx4.butterfly.gold_region_performance
+  - bx4.butterfly.gold_product_company_brand_performance
+
+description: |
+  Explore Butterfly customer and sales data with natural language.
+  Tables include:
+  - silver_account, silver_contact: account and contact master data (region, segment, tier).
+  - silver_transactions: transaction history (invoice_date, net_sales, gross_profit).
+  - silver_opportunities: pipeline (stage_name, amount, close_date).
+  - gold_customer_360: account-level rollups (lifetime_net_sales, open_pipeline_amount, primary_product_company).
+  - gold_region_performance: regional KPIs (net_sales, open_pipeline, support_cases_180d).
+  - gold_product_company_brand_performance: product company and brand metrics (net_sales, gross_profit).
+  Join accounts to transactions and opportunities via account_id; use region for regional analysis.
+
+sample_questions:
+  - What is total net sales by region?
+  - Who are the top 10 accounts by lifetime_net_sales?
+  - How much open pipeline do we have by stage?
+  - What is the total open pipeline amount?
+  - Which product companies have the highest net sales?
+  - How many contacts do we have per account?
+  - What is average resolution hours by region?
+  - Show me accounts and their primary product company and brand.

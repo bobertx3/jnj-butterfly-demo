@@ -1,0 +1,9 @@
+# Next Best Action — Databricks App (Lakebase Autoscale backend)
+# After deploy: bind PGUSER and PGPASSWORD to your secret scope in App Edit > Environment.
+
+resources:
+  apps:
+    next_best_action_app:
+      name: "next-best-action-${bundle.target}"
+      description: "Next Best Action UI backed by Lakebase Autoscale (batch_release_db)."
+      source_code_path: ../app

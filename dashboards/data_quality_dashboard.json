@@ -1,0 +1,466 @@
+{
+  "datasets": [
+    {
+      "name": "dq_global",
+      "displayName": "DQ Global Summary",
+      "queryLines": [
+        "SELECT ",
+        "  SUM(rules_count) AS rules_count, ",
+        "  SUM(failed_records) AS failed_records, ",
+        "  SUM(total_records) AS total_records, ",
+        "  AVG(avg_pass_rate) AS avg_pass_rate ",
+        "FROM bx4.butterfly.dq_summary"
+      ]
+    },
+    {
+      "name": "dq_by_table",
+      "displayName": "DQ Summary by Table",
+      "queryLines": [
+        "SELECT ",
+        "  table_name, ",
+        "  rules_count, ",
+        "  failed_records, ",
+        "  total_records, ",
+        "  avg_pass_rate, ",
+        "  measured_at ",
+        "FROM bx4.butterfly.dq_summary"
+      ]
+    },
+    {
+      "name": "dq_rules",
+      "displayName": "DQ Rule Results",
+      "queryLines": [
+        "SELECT ",
+        "  table_name, ",
+        "  rule_name, ",
+        "  failed_records, ",
+        "  total_records, ",
+        "  failure_ratio, ",
+        "  measured_at ",
+        "FROM bx4.butterfly.dq_rule_results"
+      ]
+    },
+    {
+      "name": "dq_monitor_assets",
+      "displayName": "DQ Monitor Assets",
+      "queryLines": [
+        "SELECT ",
+        "  table_name, ",
+        "  object_id, ",
+        "  refresh_id, ",
+        "  metric_tables, ",
+        "  updated_at ",
+        "FROM bx4.butterfly.dq_monitor_assets"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "dq_overview",
+      "displayName": "Data Quality Overview",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "dq_title_widget",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Butterfly Data Quality Dashboard"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "dq_subtitle_widget",
+            "multilineTextboxSpec": {
+              "lines": [
+                "API-based monitor status and rule-level quality outcomes."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "dq_kpi_rules_count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "dq_global",
+                  "fields": [
+                    {
+                      "name": "rules_count",
+                      "expression": "`rules_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "rules_count",
+                  "displayName": "Rules"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Rules Evaluated"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "dq_kpi_failed_records",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "dq_global",
+                  "fields": [
+                    {
+                      "name": "failed_records",
+                      "expression": "`failed_records`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "failed_records",
+                  "displayName": "Failed Records"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Failed Records"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "dq_kpi_avg_pass_rate",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "dq_global",
+                  "fields": [
+                    {
+                      "name": "avg_pass_rate",
+                      "expression": "`avg_pass_rate`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_pass_rate",
+                  "displayName": "Avg Pass Rate"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Average Pass Rate (0-1)"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "dq_failed_by_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "dq_by_table",
+                  "fields": [
+                    {
+                      "name": "table_name",
+                      "expression": "`table_name`"
+                    },
+                    {
+                      "name": "failed_records",
+                      "expression": "`failed_records`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "table_name",
+                  "displayName": "Table",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "failed_records",
+                  "displayName": "Failed Records",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Failed Records by Table"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "dq_pass_rate_by_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "dq_by_table",
+                  "fields": [
+                    {
+                      "name": "table_name",
+                      "expression": "`table_name`"
+                    },
+                    {
+                      "name": "avg_pass_rate",
+                      "expression": "`avg_pass_rate`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "table_name",
+                  "displayName": "Table",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg_pass_rate",
+                  "displayName": "Avg Pass Rate",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Pass Rate by Table"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 5,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "dq_rules_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "dq_rules",
+                  "fields": [
+                    {
+                      "name": "table_name",
+                      "expression": "`table_name`"
+                    },
+                    {
+                      "name": "rule_name",
+                      "expression": "`rule_name`"
+                    },
+                    {
+                      "name": "failed_records",
+                      "expression": "`failed_records`"
+                    },
+                    {
+                      "name": "total_records",
+                      "expression": "`total_records`"
+                    },
+                    {
+                      "name": "failure_ratio",
+                      "expression": "`failure_ratio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "table_name",
+                    "displayName": "Table"
+                  },
+                  {
+                    "fieldName": "rule_name",
+                    "displayName": "Rule"
+                  },
+                  {
+                    "fieldName": "failed_records",
+                    "displayName": "Failed"
+                  },
+                  {
+                    "fieldName": "total_records",
+                    "displayName": "Total"
+                  },
+                  {
+                    "fieldName": "failure_ratio",
+                    "displayName": "Failure Ratio"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Rule-Level Results"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "dq_monitor_assets_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "dq_monitor_assets",
+                  "fields": [
+                    {
+                      "name": "table_name",
+                      "expression": "`table_name`"
+                    },
+                    {
+                      "name": "refresh_id",
+                      "expression": "`refresh_id`"
+                    },
+                    {
+                      "name": "metric_tables",
+                      "expression": "`metric_tables`"
+                    },
+                    {
+                      "name": "updated_at",
+                      "expression": "`updated_at`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "table_name",
+                    "displayName": "Table"
+                  },
+                  {
+                    "fieldName": "refresh_id",
+                    "displayName": "Refresh ID"
+                  },
+                  {
+                    "fieldName": "metric_tables",
+                    "displayName": "Metric Tables"
+                  },
+                  {
+                    "fieldName": "updated_at",
+                    "displayName": "Updated At"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Monitor API Assets"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 6,
+            "height": 5
+          }
+        }
+      ]
+    }
+  ]
+}

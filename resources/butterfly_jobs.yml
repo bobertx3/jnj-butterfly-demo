@@ -1,0 +1,54 @@
+# Job: run Lakeflow pipeline -> data quality monitors -> refresh both dashboards.
+# Set variables.warehouse_id (e.g. in databricks.yml or target) for dashboard refresh tasks.
+
+resources:
+  jobs:
+    butterfly_pipeline_and_dq:
+      name: "Butterfly ETL + DQ + Dashboard Refresh"
+      environments:
+        - environment_key: serverless_default
+          spec:
+            client: "4"  # Base serverless environment for Python tasks
+            dependencies:
+              - databricks-sdk>=0.68.0  # Required for data_quality API (dataquality module)
+
+      tasks:
+        # 1) Run the Lakeflow pipeline (bronze -> silver -> gold)
+        - task_key: run_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.butterfly_etl.id}
+            full_refresh: false
+
+        # 2) Create/refresh data quality monitors for schema tables (after pipeline completes)
+        #    Uses serverless compute (environment_key => serverless).
+        - task_key: run_dq_monitors
+          depends_on:
+            - task_key: run_pipeline
+          environment_key: serverless_default
+          spark_python_task:
+            python_file: ../monitoring/create_data_quality_monitors.py
+            source: WORKSPACE
+            parameters:
+              - "--no-wait-refresh"
+              - "--output-schema"
+              - "${var.catalog}.${var.schema}"
+
+        # 3) Refresh Customer 360 dashboard (fresh pipeline data) — AI/BI dashboard task
+        - task_key: refresh_customer360_dashboard
+          depends_on:
+            - task_key: run_dq_monitors
+          dashboard_task:
+            dashboard_id: ${resources.dashboards.customer360_dashboard.id}
+            warehouse_id: ${var.warehouse_id}
+
+        # 4) Refresh Data Quality dashboard (fresh DQ metrics) — AI/BI dashboard task
+        - task_key: refresh_dq_dashboard
+          depends_on:
+            - task_key: run_dq_monitors
+          dashboard_task:
+            dashboard_id: ${resources.dashboards.data_quality_dashboard.id}
+            warehouse_id: ${var.warehouse_id}
+
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"

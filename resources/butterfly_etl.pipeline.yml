@@ -1,0 +1,23 @@
+resources:
+  pipelines:
+    butterfly_etl:
+      name: "butterfly_etl"
+      catalog: ${var.catalog}
+      schema: ${var.schema}
+      serverless: true
+      development: false
+      channel: CURRENT
+      photon: true
+      edition: ADVANCED
+      continuous: false
+      configuration:
+        catalog: ${var.catalog}
+        schema: ${var.schema}
+        raw_volume: ${var.raw_volume}
+      libraries:
+        - file:
+            path: ../src/butterfly_etl/transformations/bronze/bronze_foundational.sql
+        - file:
+            path: ../src/butterfly_etl/transformations/silver/silver_conformed.sql
+        - file:
+            path: ../src/butterfly_etl/transformations/gold/gold_customer360.sql
