@@ -21,11 +21,11 @@ command:
 # PGUSER/PGPASSWORD and GENIE_SPACE_ID are from App resources (secrets / genie-space).
 env:
   - name: PGHOST
-    value: ${var.app_pghost}
+    value: ep-wandering-scene-d2440hao.database.us-east-1.cloud.databricks.com
   - name: PGPORT
-    value: ${var.app_pgport}
+    value: "5432"
   - name: PGDATABASE
-    value: ${var.app_pgdatabase}
+    value: batch_release_db
   - name: PGUSER
     valueFrom: lakebase-native-user
   - name: PGPASSWORD
@@ -35,20 +35,20 @@ env:
   - name: MAILGUN_API_KEY
     valueFrom: mailgun-api-key
   - name: SENDER
-    value: ${var.app_sender}
+    value: robert@datakafe.com
   - name: RECIPIENT
-    value: ${var.app_recipient}
+    value: robert.leach@databricks.com
   - name: DATABRICKS_FM_ENDPOINT
-    value: ${var.app_fm_endpoint}
+    value: databricks-claude-sonnet-4-6
   - name: GENIE_SPACE_DISPLAY_NAME
-    value: ${var.app_genie_display_name}
+    value: Butterfly Analytics
   - name: GENIE_SPACE_ID
     valueFrom: genie-space
   - name: VECTOR_SEARCH_ENDPOINT_NAME
-    value: ${var.call_log_vector_endpoint_name}
+    value: butterfly-call-log-vs-endpoint
   - name: CALL_LOG_VECTOR_INDEX_NAME
-    value: ${var.call_log_vector_index_name}
+    value: bx4.butterfly.call_log_chunks_index
   - name: CALL_LOG_SOURCE_TABLE
-    value: ${var.catalog}.${var.schema}.gold_call_log_chunks
+    value: bx4.butterfly.gold_call_log_chunks
   - name: VECTOR_SEARCH_EMBEDDING_ENDPOINT
-    value: ${var.call_log_embedding_endpoint}
+    value: databricks-gte-large-en
