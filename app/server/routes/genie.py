@@ -77,7 +77,17 @@ def _extract_genie_answer(data: dict) -> dict[str, Any]:
         for att in attachments:
             if not isinstance(att, dict):
                 continue
+            # Genie payloads can identify attachment kind in two ways:
+            # 1) type field: {"type":"TEXT", ...}
+            # 2) keyed shape: {"text": {...}} / {"query": {...}}
             att_type = (att.get("type") or "").upper()
+            if not att_type:
+                if "text" in att:
+                    att_type = "TEXT"
+                elif "query" in att:
+                    att_type = "QUERY"
+                elif "suggested_questions" in att:
+                    att_type = "SUGGESTED_QUESTIONS"
             # TEXT: content may be in att.text.content (string or array) or att.content
             if att_type == "TEXT":
                 t = att.get("text")
@@ -93,22 +103,46 @@ def _extract_genie_answer(data: dict) -> dict[str, Any]:
                         sql = "\n".join(str(s) for s in sql) if sql else ""
                     result_info = query_info.get("result") or {}
                     if isinstance(result_info, dict):
-                        cols = result_info.get("columns") or []
-                        rows = result_info.get("data") or []
-                        if isinstance(cols, list) and isinstance(rows, list) and cols and rows:
-                            columns = [c.get("name", f"col_{i}") if isinstance(c, dict) else f"col_{i}" for i, c in enumerate(cols)]
-                            data_rows = [dict(zip(columns, row)) for row in rows if isinstance(row, (list, tuple))]
+                        cols = result_info.get("columns") or result_info.get("column_names") or []
+                        rows = result_info.get("data") or result_info.get("rows") or []
+                        if isinstance(rows, list) and rows:
+                            # Columns may be list of dicts {"name": "x"} or list of strings
+                            if isinstance(cols, list) and cols:
+                                column_names = [
+                                    c.get("name", f"col_{i}") if isinstance(c, dict) else (str(c) if c is not None else f"col_{i}")
+                                    for i, c in enumerate(cols)
+                                ]
+                            else:
+                                # Infer from first row if it's a dict
+                                first = rows[0]
+                                column_names = list(first.keys()) if isinstance(first, dict) else [f"col_{i}" for i in range(len(first))] if isinstance(first, (list, tuple)) else []
+                            columns = column_names
+                            data_rows = []
+                            for row in rows:
+                                if isinstance(row, (list, tuple)):
+                                    data_rows.append(dict(zip(columns, row)))
+                                elif isinstance(row, dict):
+                                    data_rows.append(row)
+                    # Some Genie responses only include query_result_metadata row_count.
+                    if not data_rows and isinstance(query_info.get("query_result_metadata"), dict):
+                        meta_row_count = query_info.get("query_result_metadata", {}).get("row_count")
+                        if isinstance(meta_row_count, int):
+                            out["row_count"] = meta_row_count
 
         if not text_response and isinstance(data.get("content"), str):
             text_response = data.get("content", "").strip()
         if not text_response:
-            text_response = "No answer text available."
+            # Fallback: if we have SQL or data, describe that instead of generic message
+            if sql or data_rows:
+                text_response = "Here are the results." if data_rows else "Query generated."
+            else:
+                text_response = "No answer text available."
 
         out["text_response"] = text_response
         out["sql"] = sql
         out["columns"] = columns
         out["data"] = data_rows
-        out["row_count"] = len(data_rows) if data_rows else None
+        out["row_count"] = len(data_rows) if data_rows else out.get("row_count")
     except Exception:
         out["text_response"] = out.get("text_response") or "No answer text available."
     return out

@@ -1,6 +1,6 @@
 """Prioritized Contact Queue API: list contacts, get detail, get/update NBA, generate NBA (writes to Lakebase)."""
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, List, Optional
 
@@ -26,6 +26,11 @@ class ContactOut(BaseModel):
     risk_level: str
     preferred_channel: str
     last_touch_days: int
+    last_interaction_channel: Optional[str] = None
+    last_interaction_date: Optional[date] = None
+    last_interaction_summary: Optional[str] = None
+    last_products_discussed: Optional[str] = None
+    next_follow_up_objective: Optional[str] = None
     trx_volume_3m: Optional[int]
     nrx_volume_3m: Optional[int]
     site_visits: Optional[int]
@@ -64,6 +69,11 @@ def _row_to_contact(r: Any) -> ContactOut:
         risk_level=r["risk_level"] or "Medium",
         preferred_channel=r["preferred_channel"] or "Email",
         last_touch_days=int(r["last_touch_days"]) if r["last_touch_days"] is not None else 0,
+        last_interaction_channel=r.get("last_interaction_channel"),
+        last_interaction_date=r.get("last_interaction_date"),
+        last_interaction_summary=r.get("last_interaction_summary"),
+        last_products_discussed=r.get("last_products_discussed"),
+        next_follow_up_objective=r.get("next_follow_up_objective"),
         trx_volume_3m=r["trx_volume_3m"],
         nrx_volume_3m=r["nrx_volume_3m"],
         site_visits=r["site_visits"],
@@ -85,7 +95,8 @@ async def list_contacts(
         return _mock_contacts(limit)
     q = f"""
         SELECT id, contact_id, name, role_specialty, institution, priority_score, intent_score,
-               risk_level, preferred_channel, last_touch_days, trx_volume_3m, nrx_volume_3m,
+               risk_level, preferred_channel, last_touch_days, last_interaction_channel, last_interaction_date,
+               last_interaction_summary, last_products_discussed, next_follow_up_objective, trx_volume_3m, nrx_volume_3m,
                site_visits, webinar_signups, rx_growth_3m_pct, territory_id, updated_at
         FROM "{SCHEMA}"."contact_queue"
     """
@@ -147,7 +158,8 @@ async def get_contact(contact_id: str) -> ContactOut:
         row = await conn.fetchrow(
             f"""
             SELECT id, contact_id, name, role_specialty, institution, priority_score, intent_score,
-                   risk_level, preferred_channel, last_touch_days, trx_volume_3m, nrx_volume_3m,
+                   risk_level, preferred_channel, last_touch_days, last_interaction_channel, last_interaction_date,
+                   last_interaction_summary, last_products_discussed, next_follow_up_objective, trx_volume_3m, nrx_volume_3m,
                    site_visits, webinar_signups, rx_growth_3m_pct, territory_id, updated_at
             FROM "{SCHEMA}"."contact_queue" WHERE contact_id = $1
             """,
@@ -163,13 +175,8 @@ async def get_nba(contact_id: str) -> NbaRecommendationOut:
     """Get NBA recommendation for a contact."""
     pool = await db.get_pool()
     if not pool:
-        return NbaRecommendationOut(
-            contact_id=contact_id,
-            recommendation_text="Personalized re-engagement email with rapid follow-up.",
-            email_draft_subject="Quick 15-min check-in this week?",
-            email_draft_body="I'm reaching out because it's been a little over a month since our last touch.",
-            generated_at=datetime.utcnow(),
-        )
+        # Local/mock mode should mirror empty pre-generate state.
+        return NbaRecommendationOut(contact_id=contact_id)
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
             f"""
@@ -206,13 +213,45 @@ async def generate_nba(contact_id: str) -> NbaRecommendationOut:
         "trx_volume_3m": None,
         "nrx_volume_3m": None,
         "rx_growth_3m_pct": None,
+        "last_interaction_channel": None,
+        "last_interaction_date": None,
+        "last_interaction_summary": None,
+        "last_products_discussed": None,
+        "next_follow_up_objective": None,
     }
     if pool:
         async with pool.acquire() as conn:
+            col_rows = await conn.fetch(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = $1 AND table_name = 'contact_queue'
+                """,
+                SCHEMA,
+            )
+            contact_cols = {r["column_name"] for r in col_rows}
+            extra_select = [
+                "last_interaction_channel"
+                if "last_interaction_channel" in contact_cols
+                else "NULL::text AS last_interaction_channel",
+                "last_interaction_date"
+                if "last_interaction_date" in contact_cols
+                else "NULL::date AS last_interaction_date",
+                "last_interaction_summary"
+                if "last_interaction_summary" in contact_cols
+                else "NULL::text AS last_interaction_summary",
+                "last_products_discussed"
+                if "last_products_discussed" in contact_cols
+                else "NULL::text AS last_products_discussed",
+                "next_follow_up_objective"
+                if "next_follow_up_objective" in contact_cols
+                else "NULL::text AS next_follow_up_objective",
+            ]
             row = await conn.fetchrow(
                 f"""
                 SELECT contact_id, name, role_specialty, institution, priority_score, intent_score,
-                       risk_level, preferred_channel, last_touch_days, trx_volume_3m, nrx_volume_3m, rx_growth_3m_pct
+                       risk_level, preferred_channel, last_touch_days, trx_volume_3m, nrx_volume_3m, rx_growth_3m_pct,
+                       {", ".join(extra_select)}
                 FROM "{SCHEMA}"."contact_queue" WHERE contact_id = $1
                 """,
                 contact_id,
@@ -231,6 +270,11 @@ async def generate_nba(contact_id: str) -> NbaRecommendationOut:
                     "trx_volume_3m": row["trx_volume_3m"],
                     "nrx_volume_3m": row["nrx_volume_3m"],
                     "rx_growth_3m_pct": float(row["rx_growth_3m_pct"]) if row["rx_growth_3m_pct"] is not None else None,
+                    "last_interaction_channel": row["last_interaction_channel"],
+                    "last_interaction_date": row["last_interaction_date"],
+                    "last_interaction_summary": row["last_interaction_summary"],
+                    "last_products_discussed": row["last_products_discussed"],
+                    "next_follow_up_objective": row["next_follow_up_objective"],
                 }
     rec, subject, body = generate_nba_and_email(contact_ctx)
     if pool:

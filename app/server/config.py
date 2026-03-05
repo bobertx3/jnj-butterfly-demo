@@ -23,6 +23,18 @@ DATABRICKS_FM_ENDPOINT = os.environ.get("DATABRICKS_FM_ENDPOINT", "databricks-cl
 GENIE_SPACE_ID = os.environ.get("GENIE_SPACE_ID", "").strip()
 GENIE_SPACE_DISPLAY_NAME = os.environ.get("GENIE_SPACE_DISPLAY_NAME", "Butterfly Analytics")
 
+# Mailgun email delivery (used by NBA email send action).
+MAILGUN_API_URL = os.environ.get("MAILGUN_API_URL", "").strip()
+MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY", "").strip()
+SENDER = os.environ.get("SENDER", "").strip()
+RECIPIENT = os.environ.get("RECIPIENT", "").strip()
+
+# Call log vector search config.
+VECTOR_SEARCH_ENDPOINT_NAME = os.environ.get("VECTOR_SEARCH_ENDPOINT_NAME", "butterfly-call-log-vs-endpoint").strip()
+CALL_LOG_VECTOR_INDEX_NAME = os.environ.get("CALL_LOG_VECTOR_INDEX_NAME", "bx4.butterfly.call_log_chunks_index").strip()
+CALL_LOG_SOURCE_TABLE = os.environ.get("CALL_LOG_SOURCE_TABLE", "bx4.butterfly.gold_call_log_chunks").strip()
+VECTOR_SEARCH_EMBEDDING_ENDPOINT = os.environ.get("VECTOR_SEARCH_EMBEDDING_ENDPOINT", "databricks-gte-large-en").strip()
+
 
 def has_lakebase_credentials() -> bool:
     return bool(PGUSER and PGPASSWORD)

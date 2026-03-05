@@ -13,6 +13,11 @@ CREATE TABLE IF NOT EXISTS public.contact_queue (
   risk_level VARCHAR(16) NOT NULL DEFAULT 'Medium',
   preferred_channel VARCHAR(32) DEFAULT 'Email',
   last_touch_days INT NOT NULL DEFAULT 0,
+  last_interaction_channel VARCHAR(32),
+  last_interaction_date DATE,
+  last_interaction_summary TEXT,
+  last_products_discussed TEXT,
+  next_follow_up_objective TEXT,
   trx_volume_3m INT DEFAULT 0,
   nrx_volume_3m INT DEFAULT 0,
   site_visits INT DEFAULT 0,
@@ -22,6 +27,13 @@ CREATE TABLE IF NOT EXISTS public.contact_queue (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Backward-compatible migration for already-created environments.
+ALTER TABLE IF EXISTS public.contact_queue ADD COLUMN IF NOT EXISTS last_interaction_channel VARCHAR(32);
+ALTER TABLE IF EXISTS public.contact_queue ADD COLUMN IF NOT EXISTS last_interaction_date DATE;
+ALTER TABLE IF EXISTS public.contact_queue ADD COLUMN IF NOT EXISTS last_interaction_summary TEXT;
+ALTER TABLE IF EXISTS public.contact_queue ADD COLUMN IF NOT EXISTS last_products_discussed TEXT;
+ALTER TABLE IF EXISTS public.contact_queue ADD COLUMN IF NOT EXISTS next_follow_up_objective TEXT;
 
 -- AI-generated next best action and email draft per contact (written when user clicks Generate NBA / Generate Email Draft).
 CREATE TABLE IF NOT EXISTS public.nba_recommendation (

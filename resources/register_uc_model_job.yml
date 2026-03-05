@@ -1,0 +1,16 @@
+resources:
+  jobs:
+    register_next_best_action_agent_job:
+      name: "jnj-butterfly-register-model"
+      tasks:
+        - task_key: register_uc_model
+          notebook_task:
+            notebook_path: ../setup/register_langchain_uc_model.ipynb
+            source: WORKSPACE
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"

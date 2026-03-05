@@ -59,6 +59,12 @@ MEDTECH_CONTEXTS = [
     ("robotic surgery program expansion", "OTTAVA Robotic System"),
     ("heart recovery and Impella utilization", "Impella CP and Impella 5.5"),
 ]
+FOLLOW_UP_OBJECTIVES = [
+    "Confirm adoption blockers and align next in-service training",
+    "Share outcomes resource and schedule short clinical follow-up",
+    "Review formulary/access questions and identify next support step",
+    "Plan brief check-in to discuss utilization trends and next actions",
+]
 
 
 def get_connection_params():
@@ -94,24 +100,38 @@ async def seed_contact_queue(conn: asyncpg.Connection) -> int:
         site_visits = random.randint(2, 12)
         webinar_signups = random.randint(0, 5)
         rx_growth = round(random.uniform(-40, 25), 1)
+        interaction_channel = random.choice(CHANNELS)
+        interaction_days_ago = random.randint(3, 45)
+        context, brands = MEDTECH_CONTEXTS[i % len(MEDTECH_CONTEXTS)]
+        interaction_summary = (
+            f"Last {interaction_channel.lower()} follow-up covered {context} with focus on {brands}."
+        )
+        follow_up_objective = FOLLOW_UP_OBJECTIVES[i % len(FOLLOW_UP_OBJECTIVES)]
         await conn.execute(
             """
             INSERT INTO public.contact_queue
             (contact_id, name, role_specialty, institution, priority_score, intent_score, risk_level,
-             preferred_channel, last_touch_days, trx_volume_3m, nrx_volume_3m, site_visits, webinar_signups,
-             rx_growth_3m_pct, territory_id, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())
+             preferred_channel, last_touch_days, last_interaction_channel, last_interaction_date,
+             last_interaction_summary, last_products_discussed, next_follow_up_objective,
+             trx_volume_3m, nrx_volume_3m, site_visits, webinar_signups, rx_growth_3m_pct,
+             territory_id, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW() - ($11 * INTERVAL '1 day'),
+                    $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())
             ON CONFLICT (contact_id) DO UPDATE SET
             name=EXCLUDED.name, role_specialty=EXCLUDED.role_specialty, institution=EXCLUDED.institution,
             priority_score=EXCLUDED.priority_score, intent_score=EXCLUDED.intent_score, risk_level=EXCLUDED.risk_level,
             preferred_channel=EXCLUDED.preferred_channel, last_touch_days=EXCLUDED.last_touch_days,
+            last_interaction_channel=EXCLUDED.last_interaction_channel, last_interaction_date=EXCLUDED.last_interaction_date,
+            last_interaction_summary=EXCLUDED.last_interaction_summary, last_products_discussed=EXCLUDED.last_products_discussed,
+            next_follow_up_objective=EXCLUDED.next_follow_up_objective,
             trx_volume_3m=EXCLUDED.trx_volume_3m, nrx_volume_3m=EXCLUDED.nrx_volume_3m,
             site_visits=EXCLUDED.site_visits, webinar_signups=EXCLUDED.webinar_signups,
             rx_growth_3m_pct=EXCLUDED.rx_growth_3m_pct, updated_at=NOW()
             """,
             contact_id, name, random.choice(ROLES), random.choice(INSTITUTIONS),
             priority_score, intent_score, risk_level, random.choice(CHANNELS),
-            last_touch_days, trx_volume_3m, nrx_volume_3m, site_visits, webinar_signups,
+            last_touch_days, interaction_channel, interaction_days_ago, interaction_summary, brands,
+            follow_up_objective, trx_volume_3m, nrx_volume_3m, site_visits, webinar_signups,
             rx_growth, "TERRITORY-001",
         )
         rows.append(contact_id)

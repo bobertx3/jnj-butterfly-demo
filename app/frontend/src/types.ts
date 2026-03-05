@@ -23,6 +23,11 @@ export interface Contact {
   risk_level: string;
   preferred_channel: string;
   last_touch_days: number;
+  last_interaction_channel: string | null;
+  last_interaction_date: string | null;
+  last_interaction_summary: string | null;
+  last_products_discussed: string | null;
+  next_follow_up_objective: string | null;
   trx_volume_3m: number | null;
   nrx_volume_3m: number | null;
   site_visits: number | null;
@@ -51,7 +56,7 @@ export interface LlmStatus {
   llm_configured: boolean;
 }
 
-export type TabId = "nba" | "genie";
+export type TabId = "overview" | "nba" | "genie";
 
 export interface GenieStatus {
   configured: boolean;
@@ -73,3 +78,4 @@ export interface GenieAskResponse {
   /** Raw Genie API message when request was sent with debug: true */
   _raw_message?: unknown;
 }
+

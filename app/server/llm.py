@@ -7,7 +7,7 @@ Uses contact context (role, institution, signals) and J&J MedTech terminology
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from .config import (
     DATABRICKS_FM_ENDPOINT,
@@ -36,6 +36,16 @@ def _contact_context_str(contact: dict[str, Any]) -> str:
         parts.append(f"3M NRX volume: {contact['nrx_volume_3m']}")
     if contact.get("rx_growth_3m_pct") is not None:
         parts.append(f"3M RX growth: {contact['rx_growth_3m_pct']}%")
+    if contact.get("last_interaction_channel"):
+        parts.append(f"Last interaction channel: {contact['last_interaction_channel']}")
+    if contact.get("last_interaction_date"):
+        parts.append(f"Last interaction date: {contact['last_interaction_date']}")
+    if contact.get("last_interaction_summary"):
+        parts.append(f"Last interaction summary: {contact['last_interaction_summary']}")
+    if contact.get("last_products_discussed"):
+        parts.append(f"Last products discussed: {contact['last_products_discussed']}")
+    if contact.get("next_follow_up_objective"):
+        parts.append(f"Next follow-up objective: {contact['next_follow_up_objective']}")
     return "\n".join(parts)
 
 
@@ -54,6 +64,7 @@ Generate a concise Next Best Action (one short paragraph, 2–3 sentences) that:
 1. Is specific to their role and institution (surgical, vision, or cardiac as relevant).
 2. Recommends a concrete step (e.g. 15-min check-in, product demo, clinical resource share, adoption support).
 3. Mentions at least one relevant J&J MedTech portfolio or product line where appropriate.
+4. If prior interaction context is provided, reference it and build on it (avoid repeating generic outreach copy).
 
 Output ONLY the recommendation paragraph, no labels or bullet points."""
 
@@ -69,6 +80,7 @@ Write a substantive outreach email that:
 2. In a second paragraph, adds clear value: mention 1–2 relevant J&J MedTech products or programs (Ethicon, J&J Vision, OTTAVA, or Abiomed) that fit their profile, and why a touchpoint would help them (e.g. clinical resources, adoption support, case discussion).
 3. Closes with a specific, low-friction ask (e.g. 15-minute check-in, clinical resource share, or demo) and a sentence that makes it easy to say yes.
 4. Is professional, compliant, and 2–3 short paragraphs long (roughly 80–150 words for the body). No promises or off-label language.
+5. If prior interaction context exists, reference the prior discussion naturally and continue that thread.
 
 You must output exactly in this format:
 LINE 1: The email subject line only (compelling, specific; no prefix like "Subject:").

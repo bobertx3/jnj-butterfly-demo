@@ -30,9 +30,25 @@ env:
     valueFrom: lakebase-native-user
   - name: PGPASSWORD
     valueFrom: lakebase-native-password
+  - name: MAILGUN_API_URL
+    valueFrom: mailgun-api-url
+  - name: MAILGUN_API_KEY
+    valueFrom: mailgun-api-key
+  - name: SENDER
+    value: ${var.app_sender}
+  - name: RECIPIENT
+    value: ${var.app_recipient}
   - name: DATABRICKS_FM_ENDPOINT
     value: ${var.app_fm_endpoint}
   - name: GENIE_SPACE_DISPLAY_NAME
     value: ${var.app_genie_display_name}
   - name: GENIE_SPACE_ID
     valueFrom: genie-space
+  - name: VECTOR_SEARCH_ENDPOINT_NAME
+    value: ${var.call_log_vector_endpoint_name}
+  - name: CALL_LOG_VECTOR_INDEX_NAME
+    value: ${var.call_log_vector_index_name}
+  - name: CALL_LOG_SOURCE_TABLE
+    value: ${var.catalog}.${var.schema}.gold_call_log_chunks
+  - name: VECTOR_SEARCH_EMBEDDING_ENDPOINT
+    value: ${var.call_log_embedding_endpoint}
