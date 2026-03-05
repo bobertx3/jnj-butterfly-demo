@@ -4,7 +4,7 @@ __pycache__/
 venv/
 .env
 node_modules/
-frontend/dist/
+# Keep frontend/dist/ so bundle deploy includes built UI (do not ignore)
 *.log
 .env
 setup/.env

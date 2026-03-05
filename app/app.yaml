@@ -1,5 +1,11 @@
 # Next Best Action — Databricks App (Lakebase Autoscale backend)
-# In Apps UI: add Secret references for PGUSER and PGPASSWORD (e.g. scope lakebase-creds, keys PGUSER / PGPASSWORD).
+#
+# Lakebase credentials: App resources must have keys matching valueFrom below.
+# In Apps UI (Edit > Configure > Resources): Secret resources
+#   - Key: lakebase-native-user   → env PGUSER
+#   - Key: lakebase-native-password → env PGPASSWORD
+# Optional: Add Secret for DATABRICKS_TOKEN if using LLM or Genie.
+# DATABRICKS_HOST and OAuth (DATABRICKS_CLIENT_ID/SECRET) are auto-injected when the app runs on Databricks.
 
 command:
   - "python"
@@ -11,12 +17,22 @@ command:
   - "--port"
   - "8000"
 
+# Env for Databricks App: literal values come from bundle variables (databricks.yml).
+# PGUSER/PGPASSWORD and GENIE_SPACE_ID are from App resources (secrets / genie-space).
 env:
   - name: PGHOST
-    value: "ep-wandering-scene-d2440hao.database.us-east-1.cloud.databricks.com"
+    value: ${var.app_pghost}
   - name: PGPORT
-    value: "5432"
+    value: ${var.app_pgport}
   - name: PGDATABASE
-    value: "batch_release_db"
-  # PGUSER and PGPASSWORD: set via App Edit > Environment > Add from secret scope
-  # e.g. lakebase-native-user (key PGUSER), lakebase-native-password (key PGPASSWORD)
+    value: ${var.app_pgdatabase}
+  - name: PGUSER
+    valueFrom: lakebase-native-user
+  - name: PGPASSWORD
+    valueFrom: lakebase-native-password
+  - name: DATABRICKS_FM_ENDPOINT
+    value: ${var.app_fm_endpoint}
+  - name: GENIE_SPACE_DISPLAY_NAME
+    value: ${var.app_genie_display_name}
+  - name: GENIE_SPACE_ID
+    valueFrom: genie-space

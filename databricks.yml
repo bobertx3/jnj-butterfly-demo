@@ -18,6 +18,18 @@ variables:
     lookup:
       warehouse: "Serverless Starter Warehouse"
 
+  # Next Best Action app (used when running as Databricks App)
+  app_pghost:
+    default: ep-wandering-scene-d2440hao.database.us-east-1.cloud.databricks.com
+  app_pgport:
+    default: "5432"
+  app_pgdatabase:
+    default: batch_release_db
+  app_fm_endpoint:
+    default: databricks-claude-sonnet-4-6
+  app_genie_display_name:
+    default: Butterfly Analytics
+
 targets:
   dev:
     mode: development

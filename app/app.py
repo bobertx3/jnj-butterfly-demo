@@ -9,6 +9,8 @@ from fastapi.responses import FileResponse
 
 from server.db import db
 from server.routes.actions import router as actions_router
+from server.routes.contacts import router as contacts_router
+from server.routes.genie import router as genie_router
 
 app = FastAPI(title="Next Best Action", version="1.0.0")
 
@@ -21,6 +23,8 @@ app.add_middleware(
 )
 
 app.include_router(actions_router)
+app.include_router(contacts_router)
+app.include_router(genie_router)
 
 
 @app.on_event("shutdown")

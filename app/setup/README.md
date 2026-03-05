@@ -52,6 +52,26 @@ os.environ["PGPASSWORD"] = w.secrets.get_secret(scope="lakebase-creds", key="PGP
 
 ## What it does
 
-1. Creates schema `app` if not exists.
-2. Creates table `app.next_best_action` (id, account_id, contact_id, action_type, title, description, priority, status, due_date, created_at, updated_at).
-3. Seeds the table with sample next-best-action rows (account/contact IDs and action types consistent with the Butterfly synthetic data).
+1. Creates table `public.next_best_action` (and seeds it with `setup_lakebase.py`).
+
+## Prioritized Contact Queue (contact_queue + nba_recommendation)
+
+The UI uses two additional tables. **Run the DDL once** (requires CREATE on `public`), then **seed** with your usual Lakebase user.
+
+### 1. Create tables (run in batch_release_db as an admin or role with CREATE)
+
+```bash
+# From project root, apply the SQL (e.g. via psql or Databricks SQL)
+psql "<connection-string>" -f app/setup/lakebase_contact_queue_ddl.sql
+```
+
+Or paste the contents of `app/setup/lakebase_contact_queue_ddl.sql` into Databricks SQL and run against `batch_release_db`.
+
+### 2. Seed contact queue and NBA recommendations
+
+Uses the same `.env` as above. Inserts 50 contacts and 50 NBA recommendation rows.
+
+```bash
+cd app/setup
+python seed_contact_queue.py
+```
