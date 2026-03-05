@@ -92,7 +92,7 @@ SELECT
   coalesce(ar.activities_180d, 0) AS activities_180d,
   coalesce(ar.successful_activities_180d, 0) AS successful_activities_180d,
   ar.last_activity_date,
-  coalesce(orx.won_amount, 0.0) AS won_amount,
+  bx4.butterfly.mask_won_amount_for_robert(coalesce(orx.won_amount, 0.0)) AS won_amount,
   coalesce(orx.open_pipeline_amount, 0.0) AS open_pipeline_amount,
   orx.next_expected_close_date,
   coalesce(cr.support_cases_180d, 0) AS support_cases_180d,

@@ -1,6 +1,19 @@
 """Next Best Action — FastAPI app backed by Lakebase Autoscale."""
 
 import os
+from pathlib import Path
+
+# Load .env for local dev (repo root or app/.env) so Genie/LLM/Lakebase vars are set
+_env_paths = (
+    Path.cwd().parent / ".env",                           # repo root when cwd is app/
+    Path(__file__).resolve().parent / ".env",              # app/.env
+    Path(__file__).resolve().parent.parent / ".env",      # repo root from __file__
+)
+for _env_path in _env_paths:
+    if _env_path.exists():
+        from dotenv import load_dotenv
+        load_dotenv(_env_path)
+        break
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,6 +22,10 @@ from fastapi.responses import FileResponse
 
 from server.db import db
 from server.routes.actions import router as actions_router
+from server.routes.call_logs import router as call_logs_router
+from server.routes.contacts import router as contacts_router
+from server.routes.email import router as email_router
+from server.routes.genie import router as genie_router
 
 app = FastAPI(title="Next Best Action", version="1.0.0")
 
@@ -21,6 +38,10 @@ app.add_middleware(
 )
 
 app.include_router(actions_router)
+app.include_router(call_logs_router)
+app.include_router(contacts_router)
+app.include_router(email_router)
+app.include_router(genie_router)
 
 
 @app.on_event("shutdown")

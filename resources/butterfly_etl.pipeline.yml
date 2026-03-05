@@ -1,7 +1,7 @@
 resources:
   pipelines:
     butterfly_etl:
-      name: "butterfly_etl"
+      name: "jnj-butterly-etl-pipeline"
       catalog: ${var.catalog}
       schema: ${var.schema}
       serverless: true
@@ -17,6 +17,8 @@ resources:
       libraries:
         - file:
             path: ../src/butterfly_etl/transformations/bronze/bronze_foundational.sql
+        - file:
+            path: ../src/butterfly_etl/transformations/bronze/bronze_call_logs.sql
         - file:
             path: ../src/butterfly_etl/transformations/silver/silver_conformed.sql
         - file:

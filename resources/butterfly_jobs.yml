@@ -4,13 +4,14 @@
 resources:
   jobs:
     butterfly_pipeline_and_dq:
-      name: "Butterfly ETL + DQ + Dashboard Refresh"
+      name: "jnj-butterly-daily-job"
       environments:
         - environment_key: serverless_default
           spec:
             client: "4"  # Base serverless environment for Python tasks
             dependencies:
               - databricks-sdk>=0.68.0  # Required for data_quality API (dataquality module)
+              - pypdf>=6.0.0
 
       tasks:
         # 1) Run the Lakeflow pipeline (bronze -> silver -> gold)
@@ -33,10 +34,29 @@ resources:
               - "--output-schema"
               - "${var.catalog}.${var.schema}"
 
+        # 2b) Parse PDF call logs into chunk table for retrieval/chat.
+        - task_key: parse_call_logs
+          depends_on:
+            - task_key: run_pipeline
+          environment_key: serverless_default
+          spark_python_task:
+            python_file: ../src/butterfly_etl/parse_call_logs_to_table.py
+            source: WORKSPACE
+
+        # 2b) Build or refresh call-log vector index for RAG/chat.
+        - task_key: setup_call_log_vector_index
+          depends_on:
+            - task_key: parse_call_logs
+          environment_key: serverless_default
+          spark_python_task:
+            python_file: ../src/butterfly_etl/create_call_log_vector_index.py
+            source: WORKSPACE
+
         # 3) Refresh Customer 360 dashboard (fresh pipeline data) — AI/BI dashboard task
         - task_key: refresh_customer360_dashboard
           depends_on:
             - task_key: run_dq_monitors
+            - task_key: setup_call_log_vector_index
           dashboard_task:
             dashboard_id: ${resources.dashboards.customer360_dashboard.id}
             warehouse_id: ${var.warehouse_id}

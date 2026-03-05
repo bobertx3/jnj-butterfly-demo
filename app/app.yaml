@@ -1,5 +1,11 @@
 # Next Best Action — Databricks App (Lakebase Autoscale backend)
-# In Apps UI: add Secret references for PGUSER and PGPASSWORD (e.g. scope lakebase-creds, keys PGUSER / PGPASSWORD).
+#
+# Lakebase credentials: App resources must have keys matching valueFrom below.
+# In Apps UI (Edit > Configure > Resources): Secret resources
+#   - Key: lakebase-native-user   → env PGUSER
+#   - Key: lakebase-native-password → env PGPASSWORD
+# Optional: Add Secret for DATABRICKS_TOKEN if using LLM or Genie.
+# DATABRICKS_HOST and OAuth (DATABRICKS_CLIENT_ID/SECRET) are auto-injected when the app runs on Databricks.
 
 command:
   - "python"
@@ -11,12 +17,38 @@ command:
   - "--port"
   - "8000"
 
+# Env for Databricks App: literal values come from bundle variables (databricks.yml).
+# PGUSER/PGPASSWORD and GENIE_SPACE_ID are from App resources (secrets / genie-space).
 env:
   - name: PGHOST
-    value: "ep-wandering-scene-d2440hao.database.us-east-1.cloud.databricks.com"
+    value: ep-wandering-scene-d2440hao.database.us-east-1.cloud.databricks.com
   - name: PGPORT
     value: "5432"
   - name: PGDATABASE
-    value: "batch_release_db"
-  # PGUSER and PGPASSWORD: set via App Edit > Environment > Add from secret scope
-  # e.g. lakebase-native-user (key PGUSER), lakebase-native-password (key PGPASSWORD)
+    value: batch_release_db
+  - name: PGUSER
+    valueFrom: lakebase-native-user
+  - name: PGPASSWORD
+    valueFrom: lakebase-native-password
+  - name: MAILGUN_API_URL
+    valueFrom: mailgun-api-url
+  - name: MAILGUN_API_KEY
+    valueFrom: mailgun-api-key
+  - name: SENDER
+    value: robert@datakafe.com
+  - name: RECIPIENT
+    value: robert.leach@databricks.com
+  - name: DATABRICKS_FM_ENDPOINT
+    value: databricks-claude-sonnet-4-6
+  - name: GENIE_SPACE_DISPLAY_NAME
+    value: Butterfly Analytics
+  - name: GENIE_SPACE_ID
+    valueFrom: genie-space
+  - name: VECTOR_SEARCH_ENDPOINT_NAME
+    value: butterfly-call-log-vs-endpoint
+  - name: CALL_LOG_VECTOR_INDEX_NAME
+    value: bx4.butterfly.call_log_chunks_index
+  - name: CALL_LOG_SOURCE_TABLE
+    value: bx4.butterfly.gold_call_log_chunks
+  - name: VECTOR_SEARCH_EMBEDDING_ENDPOINT
+    value: databricks-gte-large-en

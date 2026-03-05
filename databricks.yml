@@ -18,19 +18,40 @@ variables:
     lookup:
       warehouse: "Serverless Starter Warehouse"
 
-targets:
-  dev:
-    mode: development
-    default: false
-    workspace:
-      profile: DEFAULT
-      root_path: /Workspace/Users/${workspace.current_user.userName}/jnj-butterfly-demo
-    variables:
-      catalog: bx4
-      schema: butterfly
-      raw_volume: raw_landing
+  # Next Best Action app (used when running as Databricks App)
+  app_pghost:
+    default: ep-wandering-scene-d2440hao.database.us-east-1.cloud.databricks.com
+  app_pgport:
+    default: "5432"
+  app_pgdatabase:
+    default: batch_release_db
+  app_secret_scope:
+    default: jnj-batch-release-secrets
+  app_pguser_secret_key:
+    default: PGUSER
+  app_pgpassword_secret_key:
+    default: PGPASSWORD
+  app_mailgun_api_url_secret_key:
+    default: MAILGUN_API_URL
+  app_mailgun_api_key_secret_key:
+    default: MAILGUN_API_KEY
+  app_sender:
+    default: robert@datakafe.com
+  app_recipient:
+    default: robert.leach@databricks.com
+  app_fm_endpoint:
+    default: databricks-claude-sonnet-4-6
+  app_genie_display_name:
+    default: Butterfly Analytics
+  call_log_vector_endpoint_name:
+    default: butterfly-call-log-vs-endpoint
+  call_log_vector_index_name:
+    default: bx4.butterfly.call_log_chunks_index
+  call_log_embedding_endpoint:
+    default: databricks-gte-large-en
 
-  prod:
+targets:
+  default:
     mode: production
     default: true
     workspace:

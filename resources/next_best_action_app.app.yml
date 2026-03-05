@@ -1,9 +1,41 @@
 # Next Best Action — Databricks App (Lakebase Autoscale backend)
-# After deploy: bind PGUSER and PGPASSWORD to your secret scope in App Edit > Environment.
+#
+# Lakebase credentials: app/app.yaml expects Secret resources with keys:
+#   lakebase-native-user (→ PGUSER), lakebase-native-password (→ PGPASSWORD).
+# These are declared below and sourced from databricks.yml variables.
+#
+# Genie: The Genie space is declared here so bundle deploy keeps it attached to the app.
+# app/app.yaml references it via env GENIE_SPACE_ID valueFrom: genie-space.
 
 resources:
   apps:
     next_best_action_app:
-      name: "next-best-action-${bundle.target}"
+      name: "jnj-nba"
       description: "Next Best Action UI backed by Lakebase Autoscale (batch_release_db)."
       source_code_path: ../app
+      resources:
+        - name: lakebase-native-user
+          secret:
+            scope: ${var.app_secret_scope}
+            key: ${var.app_pguser_secret_key}
+            permission: READ
+        - name: lakebase-native-password
+          secret:
+            scope: ${var.app_secret_scope}
+            key: ${var.app_pgpassword_secret_key}
+            permission: READ
+        - name: mailgun-api-url
+          secret:
+            scope: ${var.app_secret_scope}
+            key: ${var.app_mailgun_api_url_secret_key}
+            permission: READ
+        - name: mailgun-api-key
+          secret:
+            scope: ${var.app_secret_scope}
+            key: ${var.app_mailgun_api_key_secret_key}
+            permission: READ
+        - name: genie-space
+          genie_space:
+            name: "Butterfly Analytics"
+            space_id: "01f113a87bfc17ca8e758c57f12e5a06"
+            permission: CAN_RUN

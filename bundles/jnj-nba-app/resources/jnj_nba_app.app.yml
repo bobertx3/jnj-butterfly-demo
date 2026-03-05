@@ -1,0 +1,32 @@
+resources:
+  apps:
+    next_best_action_app:
+      name: "jnj-nba"
+      description: "Next Best Action UI backed by Lakebase Autoscale (batch_release_db)."
+      source_code_path: ../../../app
+      resources:
+        - name: lakebase-native-user
+          secret:
+            scope: ${var.app_secret_scope}
+            key: ${var.app_pguser_secret_key}
+            permission: READ
+        - name: lakebase-native-password
+          secret:
+            scope: ${var.app_secret_scope}
+            key: ${var.app_pgpassword_secret_key}
+            permission: READ
+        - name: mailgun-api-url
+          secret:
+            scope: ${var.app_secret_scope}
+            key: ${var.app_mailgun_api_url_secret_key}
+            permission: READ
+        - name: mailgun-api-key
+          secret:
+            scope: ${var.app_secret_scope}
+            key: ${var.app_mailgun_api_key_secret_key}
+            permission: READ
+        - name: genie-space
+          genie_space:
+            name: "Butterfly Analytics"
+            space_id: "01f113a87bfc17ca8e758c57f12e5a06"
+            permission: CAN_RUN

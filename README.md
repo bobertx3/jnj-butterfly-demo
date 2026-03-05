@@ -1,178 +1,144 @@
-# Databricks Butterfly Medallion + Data Quality
+# Butterfly Demo Screenshots
 
-This project implements:
+## Lakeflow And Platform
 
-- Synthetic source-data generation into `bx4.butterfly.raw_landing` (CSV files in a Unity Catalog volume)
-- SQL Lakeflow medallion pipeline (`bronze` -> `silver` -> `gold`)
-- Customer 360 dashboard definition
-- API-driven Databricks Data Quality monitor setup
-- Data quality dashboard definition
+### `lakeflow.png`
+![lakeflow](images/lakeflow.png)
+- **Feature:** This screenshot shows the Lakeflow pipeline workspace where data engineering assets are orchestrated from ingestion through curated outputs.
+- **Benefits:** It demonstrates a reliable production data backbone that keeps downstream analytics, AI, and apps aligned on fresh governed data.
 
-## Project Layout
+### `lakeflow-job.png`
+![lakeflow-job](images/lakeflow-job.png)
+- **Feature:** This screenshot highlights the scheduled Lakeflow job execution view with run history and operational status.
+- **Benefits:** It proves that recurring refreshes are automated and observable so teams can trust daily KPI and customer insight availability.
 
-- `databricks.yml` - Databricks Asset Bundle root config
-- `resources/butterfly_etl.pipeline.yml` - Lakeflow pipeline resource
-- `resources/butterfly_dashboards.yml` - dashboard resources
-- `resources/butterfly_jobs.yml` - job: pipeline → DQ monitors → dashboard refresh
-- `resources/next_best_action_app.app.yml` - Next Best Action Databricks App (Lakebase backend)
-- `app/` - Next Best Action app (FastAPI + React, J&J theme)
-- `app/setup/` - Lakebase table creation and seed script for `app.next_best_action`
-- `setup/` - schema/volume provisioning and synthetic data generator
-- `src/butterfly_etl/transformations/` - medallion SQL transformations
-- `monitoring/` - DQ monitor API script + DQ reporting SQL views
-- `dashboards/` - dashboard JSON definitions + query validation SQL
+### `lakeflow-pipeline.png`
+![lakeflow-pipeline](images/lakeflow-pipeline.png)
+- **Feature:** This screenshot shows pipeline-level details for transformation stages and dependencies across the medallion flow.
+- **Benefits:** It makes lineage and troubleshooting faster by clearly showing where data is produced and how each stage feeds the next.
 
-## 1) Prerequisites
+## Unity Catalog Governance
 
-- Databricks CLI authenticated (`databricks auth login` or configured profile)
-- Unity Catalog permissions to create/refresh pipeline tables in `bx4.butterfly`
-- Permission to create Data Quality monitors and dashboards
-- A SQL warehouse ID (set `var.warehouse_id` in `databricks.yml` or target overrides)
+### `unity-catalog-object-types.png`
+![unity-catalog-object-types](images/unity-catalog-object-types.png)
+- **Feature:** This screenshot shows Unity Catalog object coverage across tables, views, models, functions, and other governed assets.
+- **Benefits:** It demonstrates consistent governance across structured and AI assets so security and discoverability scale together.
 
-## 2) Generate Synthetic CSV Inputs
+### `unity-delta-share.png`
+![unity-delta-share](images/unity-delta-share.png)
+- **Feature:** This screenshot shows secure governed data sharing setup through Delta Sharing in Unity Catalog.
+- **Benefits:** It enables cross-team or external collaboration while retaining centralized control, auditability, and policy enforcement.
 
-### 2.1 Create catalog/schema/volume
+### `unity-volume.png`
+![unity-volume](images/unity-volume.png)
+- **Feature:** This screenshot shows Unity Catalog volumes used for non-tabular artifacts such as call transcript PDFs.
+- **Benefits:** It enables governed storage of unstructured content needed for RAG and call analysis use cases.
 
-Run `setup/01_create_infrastructure.sql` in Databricks SQL:
+### `unity-unstructured-1.png`
+![unity-unstructured-1](images/unity-unstructured-1.png)
+- **Feature:** This screenshot highlights unstructured data assets managed alongside structured datasets under Unity Catalog.
+- **Benefits:** It supports multimodal analytics where document content and tabular metrics can be governed and queried together.
 
-```sql
-CREATE CATALOG IF NOT EXISTS bx4;
-CREATE SCHEMA IF NOT EXISTS bx4.butterfly;
-CREATE VOLUME IF NOT EXISTS bx4.butterfly.raw_landing;
-```
+### `unity-unstructured-2.png`
+![unity-unstructured-2](images/unity-unstructured-2.png)
+- **Feature:** This screenshot provides another view of unstructured artifact organization and metadata within UC-managed storage.
+- **Benefits:** It shows enterprise-readiness for document pipelines by combining traceability, access control, and discoverability.
 
-### 2.2 Generate data files
+### `unity-ai-definitions.png`
+![unity-ai-definitions](images/unity-ai-definitions.png)
+- **Feature:** This screenshot highlights governed AI definitions and registered assets that are managed directly in Unity Catalog.
+- **Benefits:** It shows how teams standardize AI components for reuse, auditability, and controlled production rollout.
 
-Run `setup/generate_synthetic_data.py` on Databricks (cluster or serverless notebook context).
+### `unity-ilneage.png`
+![unity-ilneage](images/unity-ilneage.png)
+- **Feature:** This screenshot displays end-to-end lineage from upstream sources to curated customer outputs.
+- **Benefits:** It helps explain impact analysis quickly by showing exactly which upstream changes affect downstream dashboards and apps.
 
-Output folders are written to:
+### `unity-dq-monitor-1.png`
+![unity-dq-monitor-1](images/unity-dq-monitor-1.png)
+- **Feature:** This screenshot shows the first data quality monitoring view for expectation checks and dataset health indicators.
+- **Benefits:** It provides early warning on data issues so teams can fix defects before business users consume bad numbers.
 
-- `/Volumes/bx4/butterfly/raw_landing/account`
-- `/Volumes/bx4/butterfly/raw_landing/contact`
-- `/Volumes/bx4/butterfly/raw_landing/consent`
-- `/Volumes/bx4/butterfly/raw_landing/product`
-- `/Volumes/bx4/butterfly/raw_landing/alignment`
-- `/Volumes/bx4/butterfly/raw_landing/employee`
-- `/Volumes/bx4/butterfly/raw_landing/transactions`
-- `/Volumes/bx4/butterfly/raw_landing/activities`
-- `/Volumes/bx4/butterfly/raw_landing/opportunities`
-- `/Volumes/bx4/butterfly/raw_landing/cases`
+### `unity-dq-monitor-2.png`
+![unity-dq-monitor-2](images/unity-dq-monitor-2.png)
+- **Feature:** This screenshot captures a deeper data quality monitoring panel with trend-level quality signals.
+- **Benefits:** It supports operational accountability by making quality performance visible over time rather than only per run.
 
-## 3) Deploy + Run Lakeflow Pipeline
+### `unity-dq-monitor-3.png`
+![unity-dq-monitor-3](images/unity-dq-monitor-3.png)
+- **Feature:** This screenshot shows an additional quality monitor focused on failed checks and specific rule outcomes.
+- **Benefits:** It speeds root-cause analysis by surfacing which checks failed and where remediation should start.
 
-```bash
-databricks bundle validate
-databricks bundle deploy
-databricks bundle run butterfly_etl
-```
+### `unity-masking.png`
+![unity-masking](images/unity-masking.png)
+- **Feature:** This screenshot demonstrates governed masking behavior for sensitive fields like `won_amount`.
+- **Benefits:** It proves role-aware protection works in analytics views so users get safe access without duplicating datasets.
 
-The pipeline creates bronze/silver/gold tables in `bx4.butterfly`.
+### `unity-publish-to-pbi.png`
+![unity-publish-to-pbi](images/unity-publish-to-pbi.png)
+- **Feature:** This screenshot shows governed dataset publishing from Unity Catalog into a Power BI consumption path.
+- **Benefits:** It demonstrates consistent KPI and security semantics across Databricks and BI tools for trusted executive reporting.
 
-## 4) Data Quality Monitoring (API)
+## Dashboards And Cost Visibility
 
-Run monitor creation and refresh:
+### `databricks-one.png`
+![databricks-one](images/databricks-one.png)
+- **Feature:** This screenshot presents the Databricks workspace context that unifies engineering, governance, BI, and AI workflows.
+- **Benefits:** It reinforces the single-platform story where teams avoid tool sprawl and move from data to decisions faster.
 
-```bash
-python monitoring/create_data_quality_monitors.py
-```
+### `dash-1.png`
+![dash-1](images/dash-1.png)
+- **Feature:** This screenshot shows a curated dashboard view for customer and commercial performance signals.
+- **Benefits:** It gives business stakeholders a fast, visual way to monitor priority accounts and trends without writing SQL.
 
-This script:
+### `dash-2.png`
+![dash-2](images/dash-2.png)
+- **Feature:** This screenshot presents an additional dashboard perspective for drilling into performance breakdowns and segments.
+- **Benefits:** It improves decision speed by turning governed data into actionable insights for account planning and follow-up.
 
-- Creates or reuses monitors for key silver/gold tables
-- Triggers monitor refreshes
-- Persists monitor metadata into `bx4.butterfly.dq_monitor_registry` (when run in Spark context)
+### `dash-cost.png`
+![dash-cost](images/dash-cost.png)
+- **Feature:** This screenshot shows account usage and cost observability using Databricks system tables.
+- **Benefits:** It helps platform owners control spend by identifying expensive workloads, trends, and optimization opportunities.
 
-Reporting views (`dq_rule_results`, `dq_monitor_assets`, `dq_summary`) are created automatically by the DQ script when the job runs, so the Data Quality dashboard has data after each run. To create or recreate them manually (e.g. in Databricks SQL), run `monitoring/dq_reporting.sql`. The script creates:
+## Genie Space
 
-- `bx4.butterfly.dq_rule_results`
-- `bx4.butterfly.dq_monitor_assets`
-- `bx4.butterfly.dq_summary`
+### `genie-1.png`
+![genie-1](images/genie-1.png)
+- **Feature:** This screenshot shows Genie Space translating natural language questions into traceable SQL over the curated customer dataset.
+- **Benefits:** It empowers sellers and analysts to ask business questions directly, uncover customer insights quickly, and validate answers with governed query lineage.
 
-## 4b) Job: Pipeline + DQ + Dashboard Refresh
+## App Experience
 
-A single job runs the pipeline, then the data quality script, then refreshes both dashboards:
+### `app1.png`
+![app1](images/app1.png)
+- **Feature:** This screenshot shows the app overview experience where customer intelligence is summarized for quick account triage.
+- **Benefits:** It lets sales teams identify high-priority opportunities and risks at a glance before deeper investigation.
 
-- **Task 1** `run_pipeline`: runs the Lakeflow pipeline (`butterfly_etl`).
-- **Task 2** `run_dq_monitors`: runs `monitoring/create_data_quality_monitors.py` (create/refresh DQ monitors).
-- **Task 3** `refresh_customer360_dashboard`: refreshes the Customer 360 dashboard.
-- **Task 4** `refresh_dq_dashboard`: refreshes the Data Quality dashboard.
+### `app2.png`
+![app2](images/app2.png)
+- **Feature:** This screenshot highlights the Next Best Action workflow where recommendations are generated for a selected account.
+- **Benefits:** It helps reps move from insight to action faster by surfacing suggested outreach and follow-up direction in context.
 
-Ensure `variables.warehouse_id` is set (e.g. in `databricks.yml` or your target) so dashboard refresh tasks have a SQL warehouse. Deploy and run:
+### `app3.png`
+![app3](images/app3.png)
+- **Feature:** This screenshot shows the in-app Genie question flow for exploring the curated dataset in conversational form.
+- **Benefits:** It enables rapid ad hoc analysis so users can validate assumptions, compare accounts, and discover trends without SQL skills.
 
-```bash
-databricks bundle deploy
-databricks bundle run butterfly_pipeline_and_dq
-```
+### `app4.png`
+![app4](images/app4.png)
+- **Feature:** This screenshot captures deeper app investigation where users can ask targeted questions and refine understanding of account behavior.
+- **Benefits:** It supports higher-quality sales strategy by combining structured KPI exploration with interactive question-driven analysis.
 
-You can also schedule this job or trigger it from the Jobs UI.
+### `app5.png`
+![app5](images/app5.png)
+- **Feature:** This screenshot shows the call analysis agent experience that queries unstructured call-log content through vector search.
+- **Benefits:** It extends the use case beyond tables by helping teams analyze call transcripts, extract signals, and incorporate unstructured context into next best actions.
+# Butterfly Demo Screenshots
 
-## 4c) Next Best Action App (Lakebase Autoscale)
+### `lakebase.png`
+![lakebase](images/lakebase.png)
+- **Feature:** This screenshot shows the Lakebase operational data layer used to support app-facing transactional and serving needs.
+- **Benefits:** It enables low-latency application workflows while staying integrated with governed analytical data in the same ecosystem.
 
-A minimal Databricks App lists and updates **next best actions** stored in Lakebase Autoscale:
 
-- **Backend**: FastAPI + asyncpg → `batch_release_db` on `ep-wandering-scene-d2440hao.database.us-east-1.cloud.databricks.com`
-- **Frontend**: React + Vite + Tailwind, Johnson & Johnson theme
-- **Table**: `app.next_best_action` (created and seeded by `app/setup/setup_lakebase.py`)
-
-**One-time setup**: Configure `PGUSER` and `PGPASSWORD` from your secret scope (e.g. `lakebase-native-user` / `lakebase-native-password` with keys `PGUSER` / `PGPASSWORD`). Run the setup script to create the table and seed data:
-
-```bash
-cd app/setup && export PGUSER=... PGPASSWORD=... && python setup_lakebase.py
-```
-
-**Deploy and run**:
-
-```bash
-databricks bundle deploy
-databricks bundle run next_best_action_app
-```
-
-In **Apps** > **next-best-action-prod** (or your target) > **Edit**, add environment variables `PGUSER` and `PGPASSWORD` from your secret scope, then redeploy. See `app/README.md` for local run and build.
-
-## 5) Dashboards
-
-Definitions:
-
-- `dashboards/customer360_dashboard.json`
-- `dashboards/data_quality_dashboard.json`
-
-Bundle resource file:
-
-- `resources/butterfly_dashboards.yml`
-
-Deploy with bundle:
-
-```bash
-databricks bundle deploy
-```
-
-## 6) Dataset Query Validation (Before Publishing Dashboards)
-
-Run all dataset queries in:
-
-- `dashboards/validate_queries.sql`
-
-Validation can be done via Databricks SQL editor or MCP `execute_sql_multi`.
-
-### Current validation status in this session
-
-Validation was executed against a Databricks SQL warehouse, and queries failed with `TABLE_OR_VIEW_NOT_FOUND` for:
-
-- `bx4.butterfly.gold_customer_360`
-- `bx4.butterfly.gold_region_performance`
-- `bx4.butterfly.gold_activity_trend_30d`
-- `bx4.butterfly.dq_summary`
-- `bx4.butterfly.dq_rule_results`
-- `bx4.butterfly.dq_monitor_assets`
-
-This is expected until steps 2-4 are run in order.
-
-## 7) Execution Order Summary
-
-1. Provision UC objects (`setup/01_create_infrastructure.sql`)
-2. Generate synthetic CSV source data (`setup/generate_synthetic_data.py`)
-3. Deploy and run pipeline (`databricks bundle deploy` + `databricks bundle run butterfly_etl`)
-4. Create/refresh DQ monitors (`monitoring/create_data_quality_monitors.py`), or run the job (4b) to do pipeline + DQ + dashboard refresh in one go
-5. Create DQ reporting views (`monitoring/dq_reporting.sql`)
-6. Validate dashboard SQL (`dashboards/validate_queries.sql`)
-7. Deploy dashboards (`databricks bundle deploy`)
