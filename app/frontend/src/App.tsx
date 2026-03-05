@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type {
+  CallLogChatResponse,
+  CallLogStatus,
   Contact,
   GenieAskResponse,
   GenieStatus,
@@ -14,6 +16,11 @@ const API = "/api";
 interface GenieTurn {
   question: string;
   response: GenieAskResponse;
+}
+
+interface CallLogTurn {
+  question: string;
+  response: CallLogChatResponse;
 }
 
 const FILTER_LABELS: Record<string, string> = {
@@ -59,6 +66,10 @@ function App() {
   const [genieInput, setGenieInput] = useState("");
   const [genieLoading, setGenieLoading] = useState(false);
   const [openSqlPanels, setOpenSqlPanels] = useState<Record<number, boolean>>({});
+  const [callLogStatus, setCallLogStatus] = useState<CallLogStatus | null>(null);
+  const [callLogTurns, setCallLogTurns] = useState<CallLogTurn[]>([]);
+  const [callLogInput, setCallLogInput] = useState("");
+  const [callLogLoading, setCallLogLoading] = useState(false);
 
   const loadStats = useCallback(async () => {
     try {
@@ -93,6 +104,21 @@ function App() {
     }
   }, []);
 
+  const loadCallLogStatus = useCallback(async () => {
+    try {
+      const r = await fetch(`${API}/call-logs/status`);
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data && typeof data.configured === "boolean") {
+        setCallLogStatus(data as CallLogStatus);
+      } else {
+        const msg = data?.detail ?? data?.message ?? "Could not load Call Analysis status.";
+        setCallLogStatus({ configured: false, message: msg });
+      }
+    } catch (_) {
+      setCallLogStatus({ configured: false, message: "Could not load Call Analysis status." });
+    }
+  }, []);
+
   const loadContacts = useCallback(async () => {
     setLoading(true);
     try {
@@ -118,7 +144,8 @@ function App() {
     loadStats();
     loadLlmStatus();
     loadGenieStatus();
-  }, [loadStats, loadLlmStatus, loadGenieStatus]);
+    loadCallLogStatus();
+  }, [loadStats, loadLlmStatus, loadGenieStatus, loadCallLogStatus]);
   useEffect(() => {
     loadContacts();
   }, [loadContacts]);
@@ -207,6 +234,14 @@ function App() {
         row_count: typeof data?.row_count === "number" ? data.row_count : null,
         error: typeof data?.error === "string" ? data.error : typeof data?.detail === "string" ? data.detail : undefined,
       };
+      const hasParsedContent =
+        Boolean((response.text_response ?? "").trim()) ||
+        Boolean((response.sql ?? "").trim()) ||
+        Boolean(Array.isArray(response.data) && response.data.length > 0);
+      if (!hasParsedContent && !response.error) {
+        response.text_response =
+          "Genie returned an empty response for this question in the hosted app context. Try rephrasing or click Ask again.";
+      }
       if (convId ?? response.conversation_id) {
         setGenieConversationId(convId ?? response.conversation_id ?? null);
       }
@@ -236,6 +271,33 @@ function App() {
 
   const handleGenieAsk = async () => {
     await submitGenieQuestion(genieInput);
+  };
+
+  const submitCallLogQuestion = async (question: string) => {
+    const q = question.trim();
+    if (!q || callLogLoading) return;
+    setCallLogLoading(true);
+    setCallLogInput("");
+    try {
+      const r = await fetch(`${API}/call-logs/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: q }),
+      });
+      const data: CallLogChatResponse & { detail?: string } = await r.json().catch(() => ({}));
+      const response: CallLogChatResponse = {
+        answer: r.ok ? (data?.answer ?? "") : (data?.detail ?? "Call analysis request failed"),
+        citations: Array.isArray(data?.citations) ? data.citations : [],
+        retrieved_chunks: Array.isArray(data?.retrieved_chunks) ? data.retrieved_chunks : [],
+      };
+      setCallLogTurns((prev) => [...prev, { question: q, response }]);
+    } catch (e) {
+      setCallLogTurns((prev) => [
+        ...prev,
+        { question: q, response: { answer: e instanceof Error ? e.message : "Call analysis request failed" } },
+      ]);
+    }
+    setCallLogLoading(false);
   };
 
   const riskBadge = (risk: string) => {
@@ -321,6 +383,14 @@ function App() {
         {lines.map((line, idx) => {
           const trimmed = line.trim();
           if (!trimmed) return <div key={`spacer-${idx}`} className="h-2" />;
+          const heading = trimmed.match(/^#{1,6}\s+(.*)$/);
+          if (heading) {
+            return (
+              <p key={`heading-${idx}`} className="font-semibold text-slate-900">
+                {renderInlineMarkdown(heading[1])}
+              </p>
+            );
+          }
           const bullet = trimmed.match(/^-\s+(.*)$/);
           if (bullet) {
             return (
@@ -384,7 +454,18 @@ function App() {
                   : "text-slate-700 hover:bg-red-50 hover:text-[#D71500]"
               }`}
             >
-              Investigate
+              Ask Genie (CxM)
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("call_logs")}
+              className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition ${
+                activeTab === "call_logs"
+                  ? "bg-[#D71500] text-white"
+                  : "text-slate-700 hover:bg-red-50 hover:text-[#D71500]"
+              }`}
+            >
+              Call Analysis Agent
             </button>
           </nav>
         </aside>
@@ -711,6 +792,90 @@ function App() {
                     Ask
                   </button>
                   </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : activeTab === "call_logs" ? (
+        <div className="mx-auto w-full">
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-100 bg-slate-50/80 px-5 py-4">
+              <h2 className="font-semibold text-slate-900">Call Analysis Agent</h2>
+              <p className="mt-0.5 text-sm text-slate-500">
+                Ask natural language questions over the call-log vector index.
+              </p>
+              {!callLogStatus?.configured && (
+                <p className="mt-2 text-xs text-amber-700">
+                  {callLogStatus?.message ?? "Call Analysis is not configured yet."}
+                </p>
+              )}
+              {callLogStatus?.configured && (
+                <p className="mt-2 text-xs text-slate-500">
+                  Index: {callLogStatus.vector_index ?? "—"}
+                </p>
+              )}
+            </div>
+
+            <div className="flex h-[calc(100vh-210px)] min-h-[640px] flex-col">
+              <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
+                {callLogTurns.length === 0 && !callLogLoading && (
+                  <p className="py-8 text-center text-sm text-slate-500">
+                    Ask about call summaries, objections, products discussed, and next-best follow-up actions.
+                  </p>
+                )}
+                {callLogTurns.map((turn, i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-800">
+                      <span className="font-medium text-slate-500">You: </span>
+                      {turn.question}
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm">
+                      <div className="text-slate-700">{renderGenieText(turn.response.answer)}</div>
+                      {Array.isArray(turn.response.citations) && turn.response.citations.length > 0 && (
+                        <div className="mt-3 border-t border-slate-100 pt-2 text-xs text-slate-500">
+                          <p className="font-medium text-slate-600">Citations</p>
+                          <ul className="mt-1 space-y-1">
+                            {turn.response.citations.map((c, ci) => (
+                              <li key={ci}>- {c.document_name ?? "call_log"} ({c.chunk_id ?? "chunk"})</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {callLogLoading && (
+                  <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#D71500] border-t-transparent" />
+                    Querying call index…
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-slate-200 p-4">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    submitCallLogQuestion(callLogInput);
+                  }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="text"
+                    value={callLogInput}
+                    onChange={(e) => setCallLogInput(e.target.value)}
+                    placeholder="Ask a question about the call log index…"
+                    className="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-sm placeholder:text-slate-400 focus:border-[#D71500] focus:outline-none focus:ring-1 focus:ring-[#D71500] disabled:bg-slate-50 disabled:opacity-60"
+                    disabled={callLogLoading}
+                  />
+                  <button
+                    type="submit"
+                    disabled={callLogLoading || !callLogInput.trim()}
+                    className="rounded-lg bg-[#D71500] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#c01200] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Ask
+                  </button>
                 </form>
               </div>
             </div>

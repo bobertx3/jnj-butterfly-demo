@@ -56,7 +56,7 @@ export interface LlmStatus {
   llm_configured: boolean;
 }
 
-export type TabId = "overview" | "nba" | "genie";
+export type TabId = "overview" | "nba" | "genie" | "call_logs";
 
 export interface GenieStatus {
   configured: boolean;
@@ -77,5 +77,19 @@ export interface GenieAskResponse {
   error?: string;
   /** Raw Genie API message when request was sent with debug: true */
   _raw_message?: unknown;
+}
+
+export interface CallLogStatus {
+  configured: boolean;
+  vector_endpoint?: string | null;
+  vector_index?: string | null;
+  source_table?: string | null;
+  message?: string | null;
+}
+
+export interface CallLogChatResponse {
+  answer: string;
+  citations?: Array<{ chunk_id?: string; document_name?: string }>;
+  retrieved_chunks?: Array<Record<string, unknown>>;
 }
 

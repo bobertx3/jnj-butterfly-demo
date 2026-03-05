@@ -86,7 +86,21 @@ Use this as your demo script and checklist.
 - Show generated SQL + result traceability to governed UC objects.
 - Emphasize analyst self-service on top of curated Gold data.
 
-## 6) Databricks Apps (Backed by Lakebase)
+## 6) Published Power BI (`bx4.butterfly.gold_customer_360`)
+
+- Show the published Power BI report/dataset built from `bx4.butterfly.gold_customer_360`.
+- Walk through key business views:
+  - account performance
+  - product/company rollups
+  - pipeline and win metrics.
+- Explain refresh and governance model:
+  - governed source in Unity Catalog
+  - consistent KPI definitions across BI tools.
+- Highlight security behavior in BI consumption:
+  - masked `won_amount` behavior for restricted viewers
+  - role/group-based access alignment with UC policies.
+
+## 7) Databricks Apps (Backed by Lakebase)
 
 - Demo the app UX and key business workflows.
 - Explain architecture:
