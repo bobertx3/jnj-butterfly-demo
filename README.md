@@ -101,6 +101,24 @@
 - **Feature:** This screenshot shows account usage and cost observability using Databricks system tables.
 - **Benefits:** It helps platform owners control spend by identifying expensive workloads, trends, and optimization opportunities.
 
+## Metric Views And Federation
+
+### `metric-views-1.png`
+![metric-views-1](images/metric-views-1.png)
+- **Feature:** This screenshot shows a Unity Catalog metric view that standardizes KPI definitions across downstream consumers.
+- **Benefits:** It ensures dashboards, Genie responses, and app experiences use the same governed business logic instead of duplicated SQL.
+
+### `metric-views-2.png`
+![metric-views-2](images/metric-views-2.png)
+- **Feature:** This screenshot highlights another metric view perspective with reusable measures exposed for analytics and AI workflows.
+- **Benefits:** It accelerates self-service analysis while preserving consistency, traceability, and centralized governance.
+
+### `federation-redshift.png`
+![federation-redshift](images/federation-redshift.png)
+- **Feature:** This screenshot shows Lakehouse Federation configured to query Amazon Redshift from Databricks without copying data into Delta first.
+- **How we federate data:** We create a federated connection in Unity Catalog, register a foreign catalog and schema backed by Redshift, grant governed access with Unity Catalog permissions, and query Redshift tables with standard SQL alongside native Databricks datasets.
+- **Benefits:** Teams can combine Redshift operational data with lakehouse-curated assets in one governed plane, reducing ETL duplication and speeding up cross-system analytics.
+
 ## Genie Space
 
 ### `genie-1.png`
